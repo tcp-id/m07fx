@@ -1,14 +1,14 @@
 package com.example.tcp.controller;
 
-import com.example.tcp.domain.dto.RequestFav;
-import com.example.tcp.domain.dto.ResponseList;
-import com.example.tcp.domain.dto.ResponseMessage;
-import com.example.tcp.domain.dto.UserRegisterRequest;
+import com.example.tcp.domain.dto.*;
 import com.example.tcp.domain.model.Favorite;
 import com.example.tcp.domain.model.User;
+import com.example.tcp.domain.model.UserFollow;
 import com.example.tcp.domain.model.projection.ProFavorite;
+import com.example.tcp.domain.model.projection.ProFollow;
 import com.example.tcp.domain.model.projection.ProUser;
 import com.example.tcp.repository.FavRepository;
+import com.example.tcp.repository.FollowUserRepository;
 import com.example.tcp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,9 +26,11 @@ public class UserController {
     @Autowired private UserRepository userRepository;
     @Autowired private BCryptPasswordEncoder passwordEncoder;
     @Autowired private FavRepository favRepository;
+    @Autowired private FollowUserRepository followUserRepository;
 
+// REG
     @PostMapping("/register")
-    public String register(@RequestBody UserRegisterRequest userRegisterRequest) {
+    public ResponseEntity<?>  register(@RequestBody UserRegisterRequest userRegisterRequest) {
 
         if (userRepository.findByUsername(userRegisterRequest.username) == null) {
             User user = new User();
@@ -36,11 +38,11 @@ public class UserController {
             user.password = passwordEncoder.encode(userRegisterRequest.password);
             user.enabled = true;
             userRepository.save(user);
-            return "OK";   // TODO
+            return ResponseEntity.ok().body(ResponseMessage.message("Usuari registrat correctament"));
         }
-        return "ERROR";    // TODO
+        return ResponseEntity.ok().body(ResponseMessage.message("Error en la creació d'usuari"));
     }
-
+        //BUSCAR USER
     @GetMapping("/")
     public ResponseEntity<?> getUser(){
         return ResponseEntity.ok().body(new ResponseList(userRepository.findBy(ProUser.class)));
@@ -50,7 +52,7 @@ public class UserController {
     public ResponseEntity<?>getUser(@PathVariable UUID id){
         return ResponseEntity.ok().body(new ResponseList(userRepository.findBy(ProUser.class)));
     }
-
+// FAVORITO
     @PostMapping("/favorites")
     public ResponseEntity<?> addFavorite(@RequestBody RequestFav requestFavorite, Authentication authentication){
         if (authentication != null) {
@@ -94,5 +96,34 @@ public class UserController {
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseMessage.message("No autorizado"));
+    }
+    //FOLLOW
+    @PostMapping("/follow")
+    public ResponseEntity<?> addFollow(@RequestBody RequestFollow requestFollow, Authentication authentication){
+        if (authentication != null) {
+            User authentificatedUser = userRepository.findByUsername(authentication.getName());
+
+            if(authentificatedUser != null){
+                UserFollow userFollow = new UserFollow();
+                userFollow.useridfollowed =requestFollow.useridfollowed;
+                userFollow.userid = authentificatedUser.userid;
+                followUserRepository.save(userFollow);
+                return ResponseEntity.ok().build();
+            }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseMessage.message("No autorizado"));
+    }
+
+
+    @GetMapping("/favorites")
+    public  ResponseEntity<?> getFollow(Authentication authentication){
+        if (authentication != null){
+            User authenticatedUser = userRepository.findByUsername(authentication.getName());
+
+            if (authenticatedUser != null){
+                return ResponseEntity.ok().body(new ResponseList((userRepository.findByUsername(authentication.getName(), ProFollow.class))));
+            }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseMessage.message("No authorized"));
     }
 }
