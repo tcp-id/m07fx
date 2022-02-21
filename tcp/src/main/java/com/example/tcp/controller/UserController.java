@@ -28,7 +28,18 @@ public class UserController {
     @Autowired private FavRepository favRepository;
     @Autowired private FollowUserRepository followUserRepository;
 
-// REG
+//GET
+    @GetMapping("/")
+    public ResponseEntity<?> getAll(){
+        return ResponseEntity.ok().body(new ResponseList(userRepository.findBy(ProUser.class)));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?>getUser(@PathVariable UUID id){
+        return ResponseEntity.ok().body(new ResponseList(userRepository.findBy(ProUser.class)));
+    }
+
+    // REG
     @PostMapping("/register")
     public ResponseEntity<?>  register(@RequestBody UserRegisterRequest userRegisterRequest) {
 
@@ -43,16 +54,21 @@ public class UserController {
         return ResponseEntity.ok().body(ResponseMessage.message("Error en la creació d'usuari"));
     }
         //BUSCAR USER
-    @GetMapping("/")
-    public ResponseEntity<?> getUser(){
-        return ResponseEntity.ok().body(new ResponseList(userRepository.findBy(ProUser.class)));
-    }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?>getUser(@PathVariable UUID id){
-        return ResponseEntity.ok().body(new ResponseList(userRepository.findBy(ProUser.class)));
-    }
+
+
 // FAVORITO
+    @GetMapping("/favorites")
+    public  ResponseEntity<?> getFavorites(Authentication authentication){
+        if (authentication != null){
+        User authenticatedUser = userRepository.findByUsername(authentication.getName());
+
+            if (authenticatedUser != null){
+            return ResponseEntity.ok().body(userRepository.findByUsername(authentication.getName(), ProFavorite.class));
+            }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseMessage.message("No authorized"));
+    }
     @PostMapping("/favorites")
     public ResponseEntity<?> addFavorite(@RequestBody RequestFav requestFavorite, Authentication authentication){
         if (authentication != null) {
@@ -67,19 +83,6 @@ public class UserController {
             }
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseMessage.message("No autorizado"));
-    }
-
-
-    @GetMapping("/favorites")
-    public  ResponseEntity<?> getFavorites(Authentication authentication){
-        if (authentication != null){
-            User authenticatedUser = userRepository.findByUsername(authentication.getName());
-
-            if (authenticatedUser != null){
-                return ResponseEntity.ok().body(userRepository.findByUsername(authentication.getName(), ProFavorite.class));
-            }
-        }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseMessage.message("No authorized"));
     }
     @DeleteMapping("/favorites")
     public ResponseEntity<?> delFavorite(@RequestBody RequestFav requestFavorite, Authentication authentication) {
@@ -98,6 +101,17 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseMessage.message("No autorizado"));
     }
     //FOLLOW
+    @GetMapping("/favorites")
+    public  ResponseEntity<?> getFollow(Authentication authentication){
+        if (authentication != null){
+            User authenticatedUser = userRepository.findByUsername(authentication.getName());
+            if (authenticatedUser != null){
+                return ResponseEntity.ok().body(userRepository.findByUsername(authentication.getName(), ProFollow.class));
+            }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseMessage.message("No authorized"));
+    }
+
     @PostMapping("/follow")
     public ResponseEntity<?> addFollow(@RequestBody RequestFollow requestFollow, Authentication authentication){
         if (authentication != null) {
@@ -112,18 +126,5 @@ public class UserController {
             }
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseMessage.message("No autorizado"));
-    }
-
-
-    @GetMapping("/favorites")
-    public  ResponseEntity<?> getFollow(Authentication authentication){
-        if (authentication != null){
-            User authenticatedUser = userRepository.findByUsername(authentication.getName());
-
-            if (authenticatedUser != null){
-                return ResponseEntity.ok().body(new ResponseList((userRepository.findByUsername(authentication.getName(), ProFollow.class))));
-            }
-        }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseMessage.message("No authorized"));
     }
 }

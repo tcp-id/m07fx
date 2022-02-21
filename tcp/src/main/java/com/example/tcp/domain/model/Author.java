@@ -1,5 +1,7 @@
 package com.example.tcp.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import javax.persistence.*;
 import java.util.Set;
 import java.util.UUID;
@@ -14,5 +16,6 @@ import java.util.UUID;
         public String imageurl;
 
         @ManyToMany(mappedBy = "author")
-            public Set<Anime> animes;
+        @JsonIgnoreProperties("author")
+        public Set<Anime> animes;
 }
