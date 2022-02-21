@@ -3,13 +3,13 @@ package com.example.tcp.controller;
 import com.example.tcp.domain.dto.ErrorMessage;
 import com.example.tcp.domain.dto.ResponseList;
 import com.example.tcp.domain.model.Anime;
+import com.example.tcp.domain.model.projection.ProAnime;
 import com.example.tcp.repository.AnimeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -21,12 +21,17 @@ public class AnimeController {
 
     @GetMapping("/")
     public ResponseEntity<?> findAllAnime() {
-        return ResponseEntity.ok().body(new ResponseList(animeRepository.findBy()));
+        return ResponseEntity.ok().body(new ResponseList(animeRepository.findBy(ProAnime.class)));
     }
 
     @GetMapping("/{id}")
-    public List<?> findAnimePorId(@PathVariable UUID animeid) {
-        return animeRepository.findAll();
+    public ResponseEntity<?> findBy(@PathVariable UUID id){
+        Anime anime = animeRepository.findById(id).orElse(null);
+        if(anime == null){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorMessage.message("Not Found" + id));
+        }
+        animeRepository.save(anime);
+        return ResponseEntity.ok().body(new ResponseList(animeRepository.findByAnimeId(id, ProAnime.class)));
     }
 
     @PostMapping("/")
@@ -43,27 +48,5 @@ public class AnimeController {
         animeRepository.delete(anime);
         return  ResponseEntity.ok().build();
     }
-
-    /*
-    @DeleteMapping(value = "/posts/{id}")
-
-
-    public ResponseEntity<Long> deletePost(@PathVariable Long id) {
-        var isRemoved = postService.delete(id);
-        if (!isRemoved) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-        return new ResponseEntity<>(id, HttpStatus.OK);
-
-
-        public boolean delete (Long id){
-            var isRemoved = this.post.removeIf(post -> post.getId().equals(id));
-            return isRemoved;
-        }
-
-
-    }
-    */
-
 }
 
